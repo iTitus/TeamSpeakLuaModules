@@ -13,10 +13,6 @@ local function logMsg(msg)
 	ts3.printMessageToCurrentTab(msg)
 end
 
-local function onMenuItemEvent(serverConnectionHandlerID, menuType, menuItemID, selectedItemID)
-	createChannel(serverConnectionHandlerID)
-end
-
 -- Run with "/lua run autocreatechannel.createChannel"
 local function createChannel(serverConnectionHandlerID)
 
@@ -88,6 +84,10 @@ local function createChannel(serverConnectionHandlerID)
 		return
 	end
 
+end
+
+local function onMenuItemEvent(serverConnectionHandlerID, menuType, menuItemID, selectedItemID)
+	createChannel(serverConnectionHandlerID)
 end
 
 local function createMenus(moduleMenuItemID)
