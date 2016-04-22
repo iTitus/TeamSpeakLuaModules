@@ -14,7 +14,12 @@ local function logMsg(msg)
 end
 
 local function onMenuItemEvent(serverConnectionHandlerID, menuType, menuItemID, selectedItemID)
-	
+	createChannel(serverConnectionHandlerID)
+end
+
+-- Run with "/lua run autocreatechannel.createChannel"
+local function createChannel(serverConnectionHandlerID)
+
 	local serverUID, error = ts3.getServerVariableAsString(serverConnectionHandlerID, ts3defs.VirtualServerProperties.VIRTUALSERVER_UNIQUE_IDENTIFIER)
 	if error == ts3errors.ERROR_not_connected then
 		logMsg("You are not connected to a server: " .. error)
@@ -82,7 +87,7 @@ local function onMenuItemEvent(serverConnectionHandlerID, menuType, menuItemID, 
 		logMsg("Failed to create channel: " .. error)
 		return
 	end
-	
+
 end
 
 local function createMenus(moduleMenuItemID)
@@ -119,6 +124,10 @@ local function loadServerChannels()
 end
 
 loadServerChannels()
+
+autocreatechannel = {
+	createChannel = createChannel
+}
 
 local registeredEvents = {
 	createMenus = createMenus,
