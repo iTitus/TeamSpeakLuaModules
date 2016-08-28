@@ -194,7 +194,7 @@ end
 
 local function createMenus(moduleMenuItemID)
 	return {
-		{ ts3defs.PluginMenuType.PLUGIN_MENU_TYPE_GLOBAL,  0,  "Create predefined channel",  "" }
+		{ ts3defs.PluginMenuType.PLUGIN_MENU_TYPE_GLOBAL,  0,  "Create or join predefined channel",  "" }
 	}
 end
 
