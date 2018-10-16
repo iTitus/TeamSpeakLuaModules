@@ -276,3 +276,13 @@ local registeredEvents = {
 
 ts3RegisterModule(MODULE_NAME, registeredEvents)
 logMsg("Successfully loaded " .. MODULE_NAME)
+
+local commands = {}
+for cmd, _ in pairs(autocreatejoinchannel) do
+  table.insert(commands, cmd)
+end
+logMsg(#commands .. " Commands available:")
+for cmd, _ in pairs(autocreatejoinchannel) do
+  logMsg("    " .. cmd)
+end
+logMsg("Run with '/lua run " .. MODULE_NAME .. ".<command>'")
