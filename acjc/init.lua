@@ -2,7 +2,7 @@ require("ts3init")
 require("ts3defs")
 require("ts3errors")
 
-local MODULE_NAME = "autocreatejoinchannel"
+local MODULE_NAME = "acjc"
 
 function tableReverse(t)
   local revT = {}
@@ -43,15 +43,25 @@ end
 local ts3errorsReverse = tableReverse(ts3errors)
 local serverChannels = {}
 
-local function logMsg(msg)
-  msg = "[" .. MODULE_NAME .. "] " .. tostring(msg)
+local function logRaw(msg)
   print(msg)
   ts3.printMessageToCurrentTab(msg)
 end
 
+local function logMsg(msg)
+  logRaw("[color=red][" .. MODULE_NAME .. "][/color] " .. tostring(msg))
+end
+
+local function logError(msg, error)
+  local errorMsg, errorB = ts3.getErrorMessage(errorCode)
+  if errorCodeB ~= ts3errors.ERROR_ok then
+    errorMsg = "Error getting Error Message: " .. errorB .. " for Error Code"
+  end
+  logMsg(msg .. ": " .. errorMsg .. " (" .. error .. ": " .. tostring(ts3errorsReverse[error]) .. ")")
+end
+
 logMsg("Loading " .. MODULE_NAME .. "...")
 
--- Run with "/lua run autocreatejoinchannel.logDefs"
 local function logDefs(serverConnectionHandlerID)
   logMsg("Defs:")
   for name, category in sortedPairsByKeys(ts3defs) do
@@ -67,20 +77,19 @@ local function logDefs(serverConnectionHandlerID)
   end
 end
 
--- Run with "/lua run autocreatejoinchannel.createOrJoinChannel"
 local function createOrJoinChannel(serverConnectionHandlerID)
   local serverUID, error = ts3.getServerVariableAsString(serverConnectionHandlerID, ts3defs.VirtualServerProperties.VIRTUALSERVER_UNIQUE_IDENTIFIER)
   if error == ts3errors.ERROR_not_connected then
-    logMsg("You are not connected to a Server: " .. ts3errorsReverse[error])
+    logError("You are not connected to a Server", error)
     return
   elseif error ~= ts3errors.ERROR_ok then
-    logMsg("Failed to get Server UID: " .. ts3errorsReverse[error])
+    logError("Failed to get Server UID", error)
     return
   end
   
   local clientID, error = ts3.getClientID(serverConnectionHandlerID)
   if error ~= ts3errors.ERROR_ok then
-    logMsg("Failed to get Client ID: " .. ts3errorsReverse[error])
+    logError("Failed to get Client ID", error)
     return
   end
   
@@ -145,12 +154,12 @@ local function createOrJoinChannel(serverConnectionHandlerID)
     return
   end
   
-  -- Try to find and join the channel
+  -- Try to find and join the Channel
   
   if channelAutoJoin == "1" then
     local channelList, error = ts3.getChannelList(serverConnectionHandlerID)
     if error ~= ts3errors.ERROR_ok then
-      logMsg("Failed to get Channel-List: " .. ts3errorsReverse[error])
+      logError("Failed to get Channel-List", error)
       return
     end
     
@@ -166,18 +175,18 @@ local function createOrJoinChannel(serverConnectionHandlerID)
     if channelID ~= 0 then
       local error = ts3.requestClientMove(serverConnectionHandlerID, clientID, channelID, channelPassword)
       if error ~= ts3errors.ERROR_ok then
-        logMsg("Failed to join Channel: " .. ts3errorsReverse[error])
+        logError("Failed to join Channel", error)
       end
       return
     end
   end
   
-  -- Create the channel
+  -- Create the Channel
   
   if channelAutoCreate == "1" then
     local parentChannelID, error = ts3.getChannelIDFromChannelNames(serverConnectionHandlerID, parentChannelPath)
     if error ~= ts3errors.ERROR_ok then
-      logMsg("Failed to get parent Channel ID: "  .. ts3errorsReverse[error])
+      logError("Failed to get parent Channel ID", error)
       return
     end
     
@@ -197,7 +206,7 @@ local function createOrJoinChannel(serverConnectionHandlerID)
     
     local error = ts3.flushChannelCreation(serverConnectionHandlerID, parentChannelID)
     if error ~= ts3errors.ERROR_ok then
-      logMsg("Failed to create channel: " .. ts3errorsReverse[error])
+      logError("Failed to create channel", error)
       return
     end
   end
@@ -205,11 +214,9 @@ local function createOrJoinChannel(serverConnectionHandlerID)
 end
 
 local function onConnectStatusChangeEvent(serverConnectionHandlerID, status, errorNumber)
-  if status ~= ts3defs.ConnectStatus.STATUS_CONNECTION_ESTABLISHED then
-    return
+  if status == ts3defs.ConnectStatus.STATUS_CONNECTION_ESTABLISHED then
+    createOrJoinChannel(serverConnectionHandlerID)
   end
-  
-  createOrJoinChannel(serverConnectionHandlerID)
 end
 
 local function onMenuItemEvent(serverConnectionHandlerID, menuType, menuItemID, selectedItemID)
@@ -234,7 +241,7 @@ local function loadServerChannels()
     end
     file:close()
   else
-    logMsg("Could not load Server Config: " .. tostring(msg) .. " " .. tostring(id))
+    logMsg("Could not load Server Config: " .. tostring(msg) .. " (" .. tostring(id) .. ")")
   end
   
   for serverUID, dataTable in pairs(serverChannels) do
@@ -256,16 +263,17 @@ local function loadServerChannels()
       end
       file:close()
     else
-      logMsg("Could not load Channel Config: " .. tostring(msg))
+      logMsg("Could not load Channel Config: " .. tostring(msg) .. " (" .. tostring(id) .. ")")
     end
   end
 end
 
 loadServerChannels()
 
-autocreatejoinchannel = {
+acjc = {
   logDefs = logDefs,
-  createOrJoinChannel = createOrJoinChannel
+  createOrJoinChannel = createOrJoinChannel,
+  cjc = createOrJoinChannel
 }
 
 local registeredEvents = {
@@ -278,11 +286,12 @@ ts3RegisterModule(MODULE_NAME, registeredEvents)
 logMsg("Successfully loaded " .. MODULE_NAME)
 
 local commands = {}
-for cmd, _ in pairs(autocreatejoinchannel) do
+for cmd, _ in pairs(acjc) do
   table.insert(commands, cmd)
 end
+table.sort(commands)
 logMsg(#commands .. " Commands available:")
-for cmd, _ in pairs(autocreatejoinchannel) do
-  logMsg("    " .. cmd)
+for _, cmd in ipairs(commands) do
+  logMsg("    [color=green]" .. cmd .. "[/color]")
 end
 logMsg("Run with '/lua run " .. MODULE_NAME .. ".<command>'")
