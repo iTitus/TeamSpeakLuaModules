@@ -53,8 +53,8 @@ local function logMsg(msg)
 end
 
 local function logError(msg, error)
-  local errorMsg, errorB = ts3.getErrorMessage(errorCode)
-  if errorCodeB ~= ts3errors.ERROR_ok then
+  local errorMsg, errorB = ts3.getErrorMessage(error)
+  if errorB ~= ts3errors.ERROR_ok then
     errorMsg = "Error getting Error Message: " .. errorB .. " for Error Code"
   end
   logMsg(msg .. ": " .. errorMsg .. " (" .. error .. ": " .. tostring(ts3errorsReverse[error]) .. ")")
